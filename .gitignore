@@ -1,0 +1,5 @@
+# KiCad backups and lock files
+hardware/*-backups/
+hardware/.history/
+hardware/*lck
+
