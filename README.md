@@ -9,7 +9,7 @@
 
 This accelerometer provides real world physics feedback to the simulation.
 The SPI interface is used to poll acceleration data per tick of the simulation.
-This uses the Block Data Update (BDU) feature of the LIS2HH12 to poll
+This uses the **Block Data Update (BDU)** feature of the LIS2HH12 to poll
 data from the OUT_(X, Y, Z)_(H, L) registers while having old data be overwritten
 ([AN4662 Section 3.1.3](hardware/datasheets/an4662.pdf#page=14)). Only the newest
 data is needed, samples can be skipped since no filtering on the MCU is used.
@@ -29,10 +29,10 @@ ODR LSB to px per tick^2 conversion rate (@ 30Hz simulation rate).
   ([ER-OLED1.12-2 Outline Drawing](hardware/datasheets/er-oled1.12-2.pdf#page=6)).
 
 ### Physics Integration
-1. Project the $\langle \mathrm{ODR\_X\_HL}, \mathrm{ODR\_Y\_HL}, \mathrm{ODR\_Z\_HL} \rangle$
-accelerometer data onto the $\langle 1, 0, 0 \rangle \cdot PX_G, \langle 0, 1, 0 \rangle
-\cdot PX_G$ plane. This both converts units and projects in two simple dot products.
-2. Use the new X, and Y acceleration values in the physics simulation.
+Projecting the accelerometer data onto the screen's X-Y plane is as simple as only converting
+the ODR_X_HL and ODR_Y_HL registers into the screen's units and ignoring ODR_Z_HL. Multiply
+ODR_X_HL and ODR_Y_HL by $PX_G$ to get the acceleration values used in the physics simulation.
+
 Pictured below is the physical configuration of the accelerometer, where 1 is the first pin.
 ```
                  ^ z
@@ -62,7 +62,7 @@ The 4-Wire SPI interface is selected, where A0 represents the Data/Command bit. 
 EastRising designed the display module means that the 12V rail msut be supplied externally.
 
 ### Parameters
-- $f_{SCK} = \frac{PCLK}{2} = 525.0k\mathrm{Hz}$ - SPI interface speed
+- $f_{SCK} = \frac{PCLK}{2} = 525\mathrm{kHz}$ - SPI interface speed
   - The maximum speed on the OLED's SPI interface is around 4Mhz
   ([SH1107 AC Characteristics](hardware/datasheets/sh1107.pdf#page=52)).
   - The STM32 peripheral (PCLK) clock is the bottleneck. The maximum
@@ -76,15 +76,17 @@ EastRising designed the display module means that the 12V rail msut be supplied 
 ## Microcontroller
 
 ## Touch Panel
+**REMOVE EVERYTHING and start over, this is wayy to overengineered, and as found out at the end
+the actual current is so low in the first place**
 > 1.44" 4 Wire Resistive Touch Screen
 - Manufacturer - *EastRising*
 - Part Number - *ER-TP1.44-1*
 - Datasheet - [er-tp1.44-1](hardware/datasheets/er-tp1.44-1.pdf)
 
-The datasheet doesn't contain any info on the axis resistance. So the minimum and maximum
-touch panel resistance is chosen as:
-- $R_{AL} = 100.0\Omega$
-- $R_{AH} = 4.0k\Omega$
+The datasheet doesn't contain any info on the axis resistance. The design will be made around the
+minimum and maximum axis resistances: $R_{AL} = 100\Omega, R_{AH} = 4\mathrm{k}\Omega$. Since
+the touch panel sensing circutry does not consume current when the panel is not touched, the
+main parameter to optimize for is sensing voltage level and number of unique ADC levels.
 
 ### Diagram
 - *R* is the axis resistance, anywhere between the minimum and maximum.
@@ -116,43 +118,35 @@ There are 4 operation modes:
 | X Pos | LO | HI     | HZ         | ADC RD |
 | Y Pos | HZ | ADC RD | HI         | LO     |
 
-### Design Constraints
-**Constraints:**
-- Max ADC input impedance
-([STM32L011 Section 6.3.15 Page 81](hardware/datasheets/stm32l011f3.pdf#page=81))
-  - $R_{AIN}<\frac{T_S}{f_{ADC} C_{ADC} \ln(2^{N+2})}-R_{ADC}$
-  - $R_{AIN}<17.40k\Omega$
-  - Where:
-    - $T_S=1.5$ - ADC sampling time
-    ([RM0377 Section 13.3.9](hardware/datasheets/rm0377.pdf#page=289))
-    - $f_{ADC}=1.05M\mathrm{Hz}$ - ADC clock source
-    ([RM0377 Section 13.3.5](hardware/datasheets/rm0377.pdf#page=285))
-    - $N=12$ - ADC resolution in bits
-    - $R_{ADC}=1k\Omega$ - ADC Sampler switching resistance
-    ([STM32L011 Table 54](hardware/datasheets/stm32l011f3.pdf#page=80))
-- Unique ADC input levels
-  - $N_{TP} = 2^N * \frac{R_{AL}^2}{R_{TP}^2+3R_{TP}R_{AL}+R_{AL}^2}$
-  - $N_{TP} > 64$
-- Sense trigger level
-  - $VDD \frac{R_{PD}}{R_{TP} + 2 R_{AH} + R_{PD}} > V_{IH}$
-  - $R_{PD} >= 25k\Omega$ - Minimum pulldown resistor value
-  ([STM32L011 Table 50](hardware/datasheets/stm32l011f3.pdf#page=75))
-  - $V_{IH} = 0.7 VDD = 2.31\mathrm{V}$ - Voltage input high
-  ([STM32L011 Table 50](hardware/datasheets/stm32l011f3.pdf#page=75))
-- GPIO max sink/source current
-([STM32L011 Section 6.3.13 Page 76](hardware/datasheets/stm32l011f3.pdf#page=76))
-  - $\pm8mA$
-  - Keeping this low also makes the output HI level more stable/higher when sensing.
-
-**Optimize For:**
-$I_{TP}=\frac{VDD}{R_{TP}+R_{AL}}$ - *XR* max current (uses minimum axis resistance).
-
 ### Parameters
-- $R_{TP}=750.0\Omega$ - Current limiting resistor
-- $N_{TP}=71$ - Number of unique ADC levels
-- $V_{TP}=2.44\mathrm{V}$ - Sense trigger level
-- $I_{TPS}=3.88m\mathrm{A}$ - Sense current (no current if there is no touch detected)
-- $I_{TP}=2.22\mu \mathrm{A}$ - Average sense current @ 30Hz poll rate
+**Current Limiting Resistor** $R_{TP}=470\Omega$
+- $T_S=1.5$ - ADC sampling time
+([RM0377 Section 13.3.9](hardware/datasheets/rm0377.pdf#page=289)).
+- $f_{ADC}=1.05\mathrm{MHz}$ - ADC clock source
+([RM0377 Section 13.3.5](hardware/datasheets/rm0377.pdf#page=285)).
+- $N=12$ - ADC resolution in bits.
+
+**Sense Trigger Level** $V_{TP} = VDD \frac{R_{PD}}{R_{TP} + 2 R_{AH} + R_{PD}} = 2.46V$
+- $R_{PD} >= 25k\Omega$ - Minimum pulldown resistor value
+([STM32L011 Table 50](hardware/datasheets/stm32l011f3.pdf#page=75)).
+- $V_{IH} = 0.7 VDD = 2.31\mathrm{V}$ - Voltage input high, minimum sense trigger level
+([STM32L011 Table 50](hardware/datasheets/stm32l011f3.pdf#page=75)).
+
+**Sense Current Consumption** $I_{TP}=8.27\mu \mathrm{A}$
+- $\pm8\mathrm{mA}$ - GPIO max sink/source current.
+([STM32L011 Section 6.3.13 Page 76](hardware/datasheets/stm32l011f3.pdf#page=76)).
+- $I_{TP\_MAX}=5.79\mathrm{mA}$ - Max peak sense current.
+- $I_{TP}=\frac{VDD}{R_{TP}+R_{AL}}\frac{50 \cdot 1.05\mathrm{MHz}}{1/30}$ - Average sensing current
+consumption (poll rate @ 30Hz).
+
+**Unique ADC Input Levels** $N_{TP} = 110$
+- $N_{TP} = 2^N * \frac{R_{AL}^2}{R_{TP}^2+3R_{TP}R_{AL}+R_{AL}^2}$
+
+**Max ADC Input Impedance** $R_{AIN}<17.4\mathrm{k}\Omega$
+- $R_{AIN}<\frac{T_S}{f_{ADC} C_{ADC} \ln(2^{N+2})}-R_{ADC}$
+([STM32L011 Section 6.3.15 Page 81](hardware/datasheets/stm32l011f3.pdf#page=81)).
+- $R_{AIN}=R_{AH}+R_{AH} \parallel R_{TP} \parallel R_{TP}$ - Input resistance in worst case
+configuration.
 
 ## Debugging
 
