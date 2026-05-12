@@ -62,7 +62,7 @@ The 4-Wire SPI interface is selected, where A0 represents the Data/Command bit. 
 EastRising designed the display module means that the 12V rail msut be supplied externally.
 
 ### Parameters
-- $f_{SCK} = \frac{PCLK}{2} = 525\mathrm{kHz}$ - SPI interface speed
+- $f_{SCK} = \frac{PCLK}{2} = 1.05\mathrm{MHz}$ - SPI interface speed
   - The maximum speed on the OLED's SPI interface is around 4Mhz
   ([SH1107 AC Characteristics](hardware/datasheets/sh1107.pdf#page=52)).
   - The STM32 peripheral (PCLK) clock is the bottleneck. The maximum
@@ -74,79 +74,153 @@ EastRising designed the display module means that the 12V rail msut be supplied 
 ([ER-OLED1.12-2 Section 4.3](hardware/datasheets/er-oled1.12-2.pdf#page=9))
 
 ## Microcontroller
+> Arm Cortex M0+ Microcontroller 16KB Flash 2KB RAM
+- Manufacturer - *STMicroelectronics*
+- Part Number - *STM32L011G4U6TR*
+- Datasheet - [STM32L011](hardware/datasheets/stm32l011.pdf)
+- Reference Manual - [RM0377](hardware/datasheets/rm0377.pdf)
+
+The main program will be a state machine where it runs all functions and then sleeps. This repeats
+on a main $30\mathrm{Hz}$ timer.
+
+### Power Mode and Clock Setup
+- **Power Mode (VCORE)** - To save power *VCORE Range 3 (1.2V)* will be selected
+[RM0377 Section 6.1.4](hardware/datasheets/rm0377.pdf#page=138).
+- **System Clock (SYSCLK)** - SYSCLK will run from the MSI (Multispeed Internal) clock at
+$2.1\mathrm{MHz}$ [RM0377 Section 7.2.3](hardware/datasheets/rm0377.pdf#page=174).
+- **Peripherial Clock (PCLK)** - PCLK will be run at the same frequency of $2.1\mathrm{MHz}$.
+- **Run Mode** -  When running with no peripherials on except FLASH, and interpolating data from
+[STM32L011 Table 22](hardware/datasheets/stm32l011.pdf#page=53), around $300\mu\mathrm{A}$ is
+consumed while running.
+- **Sleep Mode** - When in sleep mode running at $65\mathrm{kHz}$ and without FLASH, around
+$26.5\mu\mathrm{A}$ is consumed [STM32L011 Table 26](hardware/datasheets/stm32l011.pdf#page=56).
+
+### States
+#### 1. Wakeup
+LPTIM1 is running at $30\mathrm{Hz}$, and wakes up the system.
+Driven off of the stable LSI (Low Speed Internal) clock source so that MSI can be changed during
+operation. System sets MSI clock back to $2.1\mathrm{MHz}$.
+- **Required Peripherials:** PWR, FLASH, LPTIM1
+- **Power Consumption:** $300\mu\mathrm{A} + 36.0\mu\mathrm{A} = 336.0\mu\mathrm{A}$
+- **Average Runtime $\approx 0.266\mathrm{ms}$**
+  - 8 cycles at 65kHz [STM32L011 Section 6.3.5](hardware/datasheets/stm32l011.pdf#page=62)
+  - N cycles at 2.1Mhz (Somewhere in the 100-200 cycles range)
+
+#### 2. Poll Touch Screen
+First it runs the *Sense* operation to see if the touch screen is being touched, and only if there
+is touch detected does it start up ADC1 and run the *X Pos* and *Y Pos* modes. ADC1 is configured
+to run with 1.5 sample time and to run off of the PCLK with 12 bit resolution.
+- **Required Peripherials:** PWR, FLASH, LPTIM1, ADC1, GPIO
+- **Power Consumption:** $300\mu\mathrm{A} + 61.2\mu\mathrm{A} = 361.2\mu\mathrm{A}$
+- **Average Runtime $\approx 0.122\mathrm{ms}$**
+  - $1\mu\mathrm{s}$ ADC Power up Time
+  [STM32L011 Table 54](hardware/datasheets/stm32l011.pdf#page=81)
+  - $2\times\left(12.5 + 1.5\right)\times\frac{1}{1.05\mathrm{Mhz}}=27\mu\mathrm{s}$
+  2 ADC Sample Times [STM32L011 Table 54](hardware/datasheets/stm32l011.pdf#page=81)
+  - N cycles at 2.1Mhz (Somewhere in the 100-200 cycles range)
+
+#### 3. Poll Accelerometer
+SPI1 should use $CPOL=1, CPHA=1$ when communicating with the accelerometer. ODR_(X, Y, Z)_(H, L) is
+read and converted into *px/tick^2* using the accelerometer's communitcation protocol
+[LIS2HH12 Section 6.2](hardware/datasheets/lis2hh12.pdf#page=25). With this protocol, the ODR_X_L
+register can be read, and then the rest can follow with DMA1 clocking the SCK signal for the rest.
+- **Required Peripherials:** PWR, FLASH, LPTIM1, SPI1, DMA1, GPIO
+- **Power Consumption:** $300\mu\mathrm{A} + 68.6\mu\mathrm{A} = 368.6\mu\mathrm{A}$
+- **Average Runtime $\approx 0.291\mathrm{ms}$**
+  - 56 SPI cycles
+  - N cycles at 2.1Mhz (500 cycles range)
+
+#### 4. Update Simulation
+The simulation will use a state machine for the character, and the character will be affected by
+the external acceleration seen by the accelerometer, and the touch sensor. It will update the
+internal screen bitmap for the next step.
+- **Required Peripherials:** PWR, FLASH, LPTIM1
+- **Power Consumption:** $300\mu\mathrm{A} + 36.0\mu\mathrm{A} = 336.0\mu\mathrm{A}$
+- **Average Runtime $\approx 4.76\mathrm{ms}$**
+  - N cycles at 2.1Mhz (10,000 cycles budget)
+
+#### 5. Update Screen
+Since the 128x128 screen is too large to fit into 2KB RAM, work arounds are needed. A sprite based
+approach with X, Y, W, H pairs and a reference to the bitmap in FLASH works, and with a system that
+knows where sprites were previously, full screen rewrites are not needed. Even if a full screen
+refresh was needed, it would only take under $18\mathrm{ms}$ when SPI1 runs at full speed
+($1.05\mathrm{MHz}$).
+- **Required Peripherials:** PWR, FLASH, LPTIM1, SPI1, DMA1, GPIO
+- **Power Consumption:** $300\mu\mathrm{A} + 60.3\mu\mathrm{A} = 360.3\mu\mathrm{A}$
+- **Average Runtime $\approx 6.19\mathrm{ms}$**
+  - 4000 SPI1 cycles (Assuming 1/4 of screen is refreshed)
+  - N cycles at 2.1Mhz (5,000 cycles budget)
+
+#### 6. Sleep
+This sets the MSI clock to $65\mathrm{kHz}$, disables relevant clock
+blocks and peripherals, and exits the LPTIM1 interrupt to go back into sleep mode.
+- **Required Peripherials:** PWR, FLASH, LPTIM1
+- **Power Consumption:** $26.5\mu\mathrm{A} + 36.0\mu\mathrm{A} = 62.5\mu\mathrm{A}$
+
+### Average Power Consumption
+- Time in *Run* mode: $11.7\mathrm{ms}$
+- Average current: $360\mu\mathrm{A}\times\frac{11.7}{33.33}+70\mu\mathrm{A}\times
+\frac{21.63}{33.33}\approx172\mu\mathrm{A}$
 
 ## Touch Panel
-**REMOVE EVERYTHING and start over, this is wayy to overengineered, and as found out at the end
-the actual current is so low in the first place**
 > 1.44" 4 Wire Resistive Touch Screen
 - Manufacturer - *EastRising*
 - Part Number - *ER-TP1.44-1*
 - Datasheet - [er-tp1.44-1](hardware/datasheets/er-tp1.44-1.pdf)
 
-The datasheet doesn't contain any info on the axis resistance. The design will be made around the
-minimum and maximum axis resistances: $R_{AL} = 100\Omega, R_{AH} = 4\mathrm{k}\Omega$. Since
-the touch panel sensing circutry does not consume current when the panel is not touched, the
-main parameter to optimize for is sensing voltage level and number of unique ADC levels.
+The datasheet doesn't contain any info on axis resistance. Design is made around that limitation,
+but still the minimum and maximum allowed for the design will be selected for
+$300\Omega-600\Omega$. The touch panel circuitry uses no current if the panel is not being touched.
 
 ### Diagram
-- *R* is the axis resistance, anywhere between the minimum and maximum.
-- *T* is current limiting resistor $R_{TP}$.
+- $R_{AX}$ is the axis resistance, anywhere between the minimum and maximum.
+- $R_{TP}$ is current limiting resistor $R_{TP}$.
 - *XL*, *YU*, *XR*, *YD* are connected to the STM32's GPIO pins.
 ```
-   Inside TP  .  To GPIO
-              .
-  +----------------T---- XL
-  |           .
-  |     +----------T---- YU
-  |     |     .
-  |     R     .
-  |     |     .
-  +--R--?--R------------ XR
-        |     .
-        R     .
-        |     .
-        +--------------- YD
-              .
+   Inside TP    . To GPIO
+                .
+  +--------------------- XL
+  |             .
+  |      +-------------- YU
+  |      |      .
+  |     R_AX    .
+  |      |      .
+  +-R_AX-?-R_AX---R_TP-- XR
+         |      .
+        R_AX    .
+         |      .
+         +--------R_TP-- YD
+                .
 ```
 
-### Operation Modes
-There are 4 operation modes:
-| State | XL | XR     | YU         | YD     |
-|-------|----|--------|------------|--------|
-| Sleep | HZ | HZ     | HZ         | HZ     |
-| Sense | HZ | HI     | DIGITAL RD | HZ     |
-| X Pos | LO | HI     | HZ         | ADC RD |
-| Y Pos | HZ | ADC RD | HI         | LO     |
-
 ### Parameters
-**Current Limiting Resistor** $R_{TP}=470\Omega$
-- $T_S=1.5$ - ADC sampling time
-([RM0377 Section 13.3.9](hardware/datasheets/rm0377.pdf#page=289)).
-- $f_{ADC}=1.05\mathrm{MHz}$ - ADC clock source
-([RM0377 Section 13.3.5](hardware/datasheets/rm0377.pdf#page=285)).
-- $N=12$ - ADC resolution in bits.
-
-**Sense Trigger Level** $V_{TP} = VDD \frac{R_{PD}}{R_{TP} + 2 R_{AH} + R_{PD}} = 2.46V$
 - $R_{PD} >= 25k\Omega$ - Minimum pulldown resistor value
-([STM32L011 Table 50](hardware/datasheets/stm32l011f3.pdf#page=75)).
-- $V_{IH} = 0.7 VDD = 2.31\mathrm{V}$ - Voltage input high, minimum sense trigger level
-([STM32L011 Table 50](hardware/datasheets/stm32l011f3.pdf#page=75)).
+([STM32L011 Table 50](hardware/datasheets/stm32l011.pdf#page=75)).
+- $I_{MAX}=2\mathrm{mA}$
 
-**Sense Current Consumption** $I_{TP}=8.27\mu \mathrm{A}$
-- $\pm8\mathrm{mA}$ - GPIO max sink/source current.
-([STM32L011 Section 6.3.13 Page 76](hardware/datasheets/stm32l011f3.pdf#page=76)).
-- $I_{TP\_MAX}=5.79\mathrm{mA}$ - Max peak sense current.
-- $I_{TP}=\frac{VDD}{R_{TP}+R_{AL}}\frac{50 \cdot 1.05\mathrm{MHz}}{1/30}$ - Average sensing current
-consumption (poll rate @ 30Hz).
+### Operation Modes
+When sleeping, the touch panel GPIO is all set to Input (*no* pullup/down). This configuration
+consumes no current.
 
-**Unique ADC Input Levels** $N_{TP} = 110$
-- $N_{TP} = 2^N * \frac{R_{AL}^2}{R_{TP}^2+3R_{TP}R_{AL}+R_{AL}^2}$
+#### Touch Sense
+| Pin | State             |
+|-----|-------------------|
+| XL  | Out Push-Pull, HI |
+| XR  | HZ                |
+| YU  | In Pull-Down      |
+| YD  | HZ                |
+- $I_{TP}=\frac{V_{DD}}{R_{PD}}=0.132\mathrm{mA}$ - GPIO source/sink current (if pressed)
+- $V_{TP}=V_{DD}\frac{R_{PD}}{2R_{AX}+R_{IA}+R_{PD}}=3.03\mathrm{V}$ - Touch sense level
+  - $R_{IA}$ - Inter-axis touch resistance ($0-1000\Omega$)
 
-**Max ADC Input Impedance** $R_{AIN}<17.4\mathrm{k}\Omega$
-- $R_{AIN}<\frac{T_S}{f_{ADC} C_{ADC} \ln(2^{N+2})}-R_{ADC}$
-([STM32L011 Section 6.3.15 Page 81](hardware/datasheets/stm32l011f3.pdf#page=81)).
-- $R_{AIN}=R_{AH}+R_{AH} \parallel R_{TP} \parallel R_{TP}$ - Input resistance in worst case
-configuration.
+#### X/Y Position Reading
+| State | XL                | XR                | YU                | YD                |
+|-------|-------------------|-------------------|-------------------|-------------------|
+| X Pos | Out Push-Pull, LO | Out Push-Pull, HI | ADC In            | HZ                |
+| Y Pos | ADC In            | HZ                | Out Push-Pull, LO | Out Push-Pull, HI |
+
+$R_{TP} = 1.4\mathrm{k}\Omega$ - What to use for $R_{TP}$ since only these modes use it
+- $R_{TP} > \frac{V_{DD}}{I_{MAX}}-R_{AX}$ - What to select for $R_{TP}$ to keep current low
 
 ## Debugging
 
