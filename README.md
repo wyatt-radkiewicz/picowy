@@ -1,4 +1,19 @@
-# PICOWY Design Document
+# picowy Design Document
+This is the design document for the picowy. This is made to be a thin, low power tomagachi like
+device for my girlfriend. This design document goes over the basic system configuration and power
+requirements. It enumerates every major system component. It does not go into detail about the
+coding architecture or the physical design, those can be found in the firmware directory and the
+chassis directory respectivly.
+
+> *eklipsed, rev. 1.0*
+
+## Table of Contents
+1. [Accelerometer](#accelerometer)
+2. [OLED Display](#oled-display)
+3. [Microcontroller](#microcontroller)
+4. [Touch Panel](#touch-panel)
+5. [FTDI Firmware Flasher](#ftdi-firmware-flasher)
+6. [Power System](#power-system)
 
 ## Accelerometer
 > Ultra Low-Power 3 Axis Accelerometer
@@ -273,21 +288,24 @@ There are 3 distinct power rails, VBUS, 3V3, and 12V. The devices connected to e
 
 The rated battery charging rate and lack of circuitry needed to negociate USB Battery Charging or
 Power Delivery means that the battery charger will have an input current limit of $50\mathrm{mA}$.
-The power consumed by the 3V3 rail and the 12V rail is around $1.8\mathrm{mW}$, or at the battery's
-3.7V, $0.496\mathrm{mA}$.
+
+With the selected parts, the 3V3 rail draws $1.4\mathrm{mW}$ because of the LDO. The 12V rail draws
+$1.2\mathrm{mW}$ due to the $\approx50\%$ efficiency. This means the battery will be sourcing
+around $0.7\mathrm{mA}$.
 
 ### Battery <TODO>
 > 3.7V Thin Lithium Ion Battery Rechargeable
 - Manufacturer - *GlobTek, Inc.*
 - Part Number - *BL0105F2635161S1PCAT*
-- Datasheet - [BL0105F2635161S1PCAT](hardware/datasheets/battery/bl0105f2635161s1pcat.pdf)
+- Datasheet - [BL0105F2635161S1PCAT](hardware/datasheets/battery/battery.pdf)
 
-Stay in the $50\mathrm{mA}$ range for charging
-[BL0105F2635161S1PCAT Section 3](hardware/datasheets/battery/bl0105f2635161s1pcat.pdf#page=3).
+Is very thin $2.8\mathrm{mm}$ thick battery, with thin connector. Stay in the $50\mathrm{mA}$ range
+for charging [BL0105F2635161S1PCAT Section 3](hardware/datasheets/battery/battery.pdf#page=3).
 
 #### Male Connector (PCB Side)
 - Manufacturer - *Hirose Electric Co Ltd*
 - Part Number - *DF65-3P-1.7V(21)*
+- Drawing - [DF65-3P-1.7V-21](hardware/datasheets/conn/df65-3p-1.7v-21.pdf)
 
 ### Battery Charger
 > Battery Charger and Power Path Managment
@@ -310,8 +328,19 @@ This is an optional component, and can be added to the $\mathrm{I^2C}$ bus on th
 how much battery is left and how much current the system consumes.
 
 ### 3V3 Rail
-> TODO
+> Low Noise LDO Voltage Regulator
+- Manufacturer - *Texas Instruments*
+- Part Number - *TPS7A2033PDBVR*
+- Datasheet - [TPS7A20](hardware/datasheets/ldo/tps7a20.pdf)
+
+As shown the in part number, *TPS7A20***33***PDBVR* is a 3.3V low noise, low $I_Q$ LDO for
+the 3.3V rail.
 
 ### 12V Rail
-> TODO
+> Power Step-Up DC-DC Converter
+- Manufacturer - *Diodes Incorporated*
+- Part Number - *AP3015AKTR-G1*
+- Datasheet - [AP3015A](hardware/datasheets/boost/ap3015a.pdf)
 
+This is a low $I_Q$ boost converter that can supply the 12V needed for the OLED Driver. It most
+likely will have around a 50% efficiency, but the OLED does not require a lot of current.
