@@ -18,7 +18,7 @@ chassis directory respectivly.
 ## Accelerometer
 > Ultra Low-Power 3 Axis Accelerometer
 - Manufacturer - *STMicroelectronics*
-- Part Number - *LIS2HH12*
+- Part Number - *LIS2HH12TR*
 - Datasheet - [lis2hh12](hardware/datasheets/accel/lis2hh12.pdf)
 - Application Notes - [an4662](hardware/datasheets/accel/an4662.pdf)
 
