@@ -1,0 +1,150 @@
+(footprint "ER-TP1.44-1"
+	(version 20260206)
+	(generator "pcbnew")
+	(generator_version "10.0")
+	(layer "F.Cu")
+	(descr "Touch Panel Soldered FPC Connector")
+	(property "Reference" "REF**"
+		(at 0 1.9 0)
+		(unlocked yes)
+		(layer "F.SilkS")
+		(uuid "ebc85385-2b89-41ad-97f0-0e4c5061af17")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Value" "ER-TP1.44-1"
+		(at 0 3.8 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(uuid "649d41c1-6270-47f1-ad6a-6365af84513e")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Datasheet" "file://${KIPRJMOD}/datasheets/touch/er-tp1.44-1.pdf"
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "18caad49-6784-438d-b865-0f684689857c")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Description" "Touch Panel Soldered FPC Connector"
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "ba51214b-bd47-4734-b391-1d36af249ed4")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(attr smd)
+	(duplicate_pad_numbers_are_jumpers no)
+	(fp_line
+		(start -1.8 -0.7)
+		(end -1.8 0.7)
+		(stroke
+			(width 0.15)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "0fc7bc6c-0924-41d3-84ec-3537e314f0fd")
+	)
+	(fp_line
+		(start -1.8 0.7)
+		(end -1.5 1)
+		(stroke
+			(width 0.15)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "b9237206-6ec8-43b0-b932-d20ad0f7fedb")
+	)
+	(fp_line
+		(start -1.5 1)
+		(end 1.5 1)
+		(stroke
+			(width 0.15)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "888107a3-78ef-47f1-a772-c0390f46af1b")
+	)
+	(fp_line
+		(start 1.5 1)
+		(end 1.8 0.7)
+		(stroke
+			(width 0.15)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "ec74ce4e-bfdd-4093-bca1-0253c2a39f28")
+	)
+	(fp_line
+		(start 1.8 0.7)
+		(end 1.8 -0.7)
+		(stroke
+			(width 0.15)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "59ff86f5-e8f2-47dd-9acf-47881fd8ee91")
+	)
+	(fp_text user "${REFERENCE}"
+		(at 0 5.3 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(uuid "2bc470e5-776e-4633-b0d5-1fbe3dce320b")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(pad "1" smd roundrect
+		(at -1.2 0)
+		(size 0.4 1.5)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.15)
+		(uuid "4feacb3a-e429-4248-b7c8-9567a0d60e38")
+	)
+	(pad "2" smd roundrect
+		(at -0.4 0)
+		(size 0.4 1.5)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.15)
+		(uuid "ed455ca2-4c29-487f-aa73-385e25df5185")
+	)
+	(pad "3" smd roundrect
+		(at 0.4 0)
+		(size 0.4 1.5)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.15)
+		(uuid "810fbed3-d86d-47fd-a8c8-67969359c40b")
+	)
+	(pad "4" smd roundrect
+		(at 1.2 0)
+		(size 0.4 1.5)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.15)
+		(uuid "c74fbfe2-404d-4d0d-a4e1-de62d6e76fc4")
+	)
+	(embedded_fonts no)
+)

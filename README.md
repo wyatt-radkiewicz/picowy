@@ -5,7 +5,7 @@ requirements. It enumerates every major system component. It does not go into de
 coding architecture or the physical design, those can be found in the firmware directory and the
 chassis directory respectivly.
 
-> *eklipsed, rev. 1.0*
+> *eklipsed, rev. 1.0.1*
 
 ## Table of Contents
 1. [Accelerometer](#accelerometer)
@@ -19,8 +19,8 @@ chassis directory respectivly.
 > Ultra Low-Power 3 Axis Accelerometer
 - Manufacturer - *STMicroelectronics*
 - Part Number - *LIS2HH12TR*
-- Datasheet - [lis2hh12](hardware/datasheets/accel/lis2hh12.pdf)
-- Application Notes - [an4662](hardware/datasheets/accel/an4662.pdf)
+- Datasheet - [LIS2HH12](hardware/datasheets/accel/lis2hh12.pdf)
+- Application Notes - [AN4662](hardware/datasheets/accel/an4662.pdf)
 
 This accelerometer provides real world physics feedback to the simulation.
 The SPI interface is used to poll acceleration data per tick of the simulation.
@@ -68,10 +68,11 @@ Pictured below is the physical configuration of the accelerometer, where 1 is th
 > 1.12" 128x128 Monochrome White OLED Display
 - Manufacturer - *EastRising*
 - Part Number - *ER-OLED1.12-2W*
-- Datasheet - [er-oled1.12-2](hardware/datasheets/oled/er-oled1.12-2.pdf)
+- Datasheet - [ER-OLED1.12-2](hardware/datasheets/oled/er-oled1.12-2.pdf)
 - Reference Implementation -
 [er-oled1.12-2-interfacing](hardware/datasheets/oled/er-oled1.12-2-interfacing.pdf)
-- Controller - [sh1107](hardware/datasheets/oled/sh1107.pdf)
+- Controller - [SH1107](hardware/datasheets/oled/sh1107.pdf)
+- Connector Datasheet - [ZIF20PIN](hardware/datasheets/oled/er-con20ht-1.pdf)
 
 This OLED has a SPI interface, which can be shared with the internal measurement unit.
 The 4-Wire SPI interface is selected, where A0 represents the Data/Command bit. The way that
@@ -196,7 +197,7 @@ $V_{DD}$. This will use the Serial Wire Debug (SWD) protocol.
 > 1.44" 4 Wire Resistive Touch Screen
 - Manufacturer - *EastRising*
 - Part Number - *ER-TP1.44-1*
-- Datasheet - [er-tp1.44-1](hardware/datasheets/touch/er-tp1.44-1.pdf)
+- Datasheet - [ER-TP1.44-1](hardware/datasheets/touch/er-tp1.44-1.pdf)
 
 The datasheet doesn't contain any info on axis resistance. Design is made around that limitation,
 but still the minimum and maximum allowed for the design will be selected for
@@ -262,7 +263,7 @@ $R_{TP} = 1.4\mathrm{k}\Omega$ - What to use for $R_{TP}$ since only these modes
 This will be used to boot the STM32 into the USART Boot Loader
 ([AN3155](hardware/datasheets/stm32/an3155.pdf)). Two GPIOs will be used on the FT260, one to
 assert NRST on the STM32, and the other to assert the BOOT0 pin on the STM32 to get it into
-bootloader mode [AN3155 Table 2](hardware/datasheets/stm32/an3155.pdf#page=34). For this,
+bootloader mode [AN2606 Table 2](hardware/datasheets/stm32/an2606.pdf#page=34). For this,
 nBOOT_SEL must be 0 [RM0377 Section 3.7.8](hardware/datasheets/stm32/rm0377.pdf#page=110).
 
 Support for an external EEPROM configuration chip for the FT260 will be made by making a space
@@ -280,11 +281,11 @@ There are 3 distinct power rails, VBUS, 3V3, and 12V. The devices connected to e
 | RAIL | DEVICES         | CURRENT                                                                                                       |
 |------|-----------------|---------------------------------------------------------------------------------------------------------------|
 | VBUS | FT260           | $9.6\mathrm{mA}$ [FT260 Table Section 6.3](hardware/datasheets/ftdi/ft260.pdf#page=29)                        |
-|      | Battery Charger | $50\mathrm{mA}$ Set by $EN1=HI,EN2=LO$ [BQ24232 Section 7.5](hardware/datasheets/charger/bq24230.pdf#page=9)  |
+|      | Battery Charger | $50\mathrm{mA}$ Set by $EN1=HI,EN2=LO$ [BQ24230 Section 7.5](hardware/datasheets/charger/bq24230.pdf#page=9)  |
 | 3V3  | STM32           | $172\mu\mathrm{A}$ [STM32 Average Power Consumption](#microcontroller)                                        |
 |      | OLED            | $100\mu\mathrm{A}$ [OLED Display 3V3 Current](#oled-display)                                                  |
 |      | Accelerometer   | $110\mu\mathrm{A}$ [Accelerometer Current](#accelerometer)                                                    |
-| 12V  | OLED Driver     | $48\mu\mathrm{A}$ [OLED Display Driver 12V Current](#oled-display)                                            |
+| 12V  | OLED Driver     | $32\mu\mathrm{A}$ [OLED Display Driver 12V Current](#oled-display)                                            |
 
 The rated battery charging rate and lack of circuitry needed to negociate USB Battery Charging or
 Power Delivery means that the battery charger will have an input current limit of $50\mathrm{mA}$.
@@ -310,8 +311,8 @@ for charging [BL0105F2635161S1PCAT Section 3](hardware/datasheets/battery/batter
 ### Battery Charger
 > Battery Charger and Power Path Managment
 - Manufacturer - *Texas Instruments*
-- Part Number - *BQ24232RGTR*
-- Datasheet - [BQ24232](hardware/datasheets/charger/bq24230.pdf)
+- Part Number - *BQ24230RGTR*
+- Datasheet - [BQ24230](hardware/datasheets/charger/bq24230.pdf)
 
 Using this power path battery charger, it allows instant on from a dead battery. Use custom current
 limit though external resistor to give some room for the FT260 to also source current on VBUS and
@@ -338,9 +339,9 @@ the 3.3V rail.
 
 ### 12V Rail
 > Power Step-Up DC-DC Converter
-- Manufacturer - *Diodes Incorporated*
-- Part Number - *AP3015AKTR-G1*
-- Datasheet - [AP3015A](hardware/datasheets/boost/ap3015a.pdf)
+- Manufacturer - *Texas Intruments*
+- Part Number - *TPS61040DDCR*
+- Datasheet - [TPS61040](hardware/datasheets/boost/tps61040.pdf)
 
-This is a low $I_Q$ boost converter that can supply the 12V needed for the OLED Driver. It most
-likely will have around a 50% efficiency, but the OLED does not require a lot of current.
+The boost converter suggested by the reference implementation for the OLED. Will have around a
+70% efficency a the OLED's advertised current.
