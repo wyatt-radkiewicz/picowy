@@ -4609,6 +4609,12 @@
 		(uuid "1757ad20-7a53-4082-984b-45a540f72566")
 	)
 	(junction
+		(at 151.13 33.02)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "187d995d-8e2e-4fdc-bb13-70ec84da9528")
+	)
+	(junction
 		(at 203.2 67.31)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -5400,7 +5406,7 @@
 	)
 	(wire
 		(pts
-			(xy 125.73 33.02) (xy 173.99 33.02)
+			(xy 125.73 33.02) (xy 151.13 33.02)
 		)
 		(stroke
 			(width 0)
@@ -5497,6 +5503,16 @@
 			(type default)
 		)
 		(uuid "a133bac0-823f-4de3-9c6d-aeada664e4dd")
+	)
+	(wire
+		(pts
+			(xy 151.13 33.02) (xy 173.99 33.02)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a44c20fd-1a9b-4c12-9f1d-7a2e0e59907e")
 	)
 	(wire
 		(pts
@@ -6108,7 +6124,7 @@
 		)
 		(uuid "57a2f61b-27af-45b6-ad1a-d449192dc604")
 	)
-	(label "USB_DM"
+	(label "USB_IN_D+"
 		(at 55.88 48.26 0)
 		(effects
 			(font
@@ -6118,7 +6134,7 @@
 		)
 		(uuid "6a20d80c-dc7f-46db-be28-269f4e6f7e2d")
 	)
-	(label "USB_DP"
+	(label "USB_IN_D-"
 		(at 55.88 50.8 0)
 		(effects
 			(font
@@ -6253,7 +6269,7 @@
 			)
 		)
 	)
-	(global_label "D+"
+	(global_label "USB_D-"
 		(shape bidirectional)
 		(at 111.76 50.8 0)
 		(fields_autoplaced yes)
@@ -6265,7 +6281,7 @@
 		)
 		(uuid "4fb873d8-17eb-42ad-a8a1-b998551cea37")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 118.6989 50.8 0)
+			(at 123.4765 50.8 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -6517,7 +6533,7 @@
 			)
 		)
 	)
-	(global_label "D-"
+	(global_label "USB_D+"
 		(shape bidirectional)
 		(at 111.76 48.26 0)
 		(fields_autoplaced yes)
@@ -6529,7 +6545,7 @@
 		)
 		(uuid "ceb898be-d444-4751-9394-9c993147ca56")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 118.6989 48.26 0)
+			(at 123.4765 48.26 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -6665,7 +6681,7 @@
 			(justify right bottom)
 		)
 		(uuid "2204da79-9968-46bc-b5cf-43df063c5c83")
-		(property "Net Class" "Differential"
+		(property "Net Class" "USB"
 			(at 92.1385 55.88 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -6701,15 +6717,15 @@
 			(justify right bottom)
 		)
 		(uuid "2d85b7c3-0bb4-496b-9e7b-6e4fac9eb547")
-		(property "Net Class" "Differential"
-			(at 69.1515 55.88 0)
+		(property "Net Class" "USB"
+			(at 70.5485 55.88 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify right)
+				(justify left)
 			)
 		)
 		(property "Component Class" ""
@@ -8491,6 +8507,7 @@
 	(symbol
 		(lib_id "Power_Protection:USBLC6-2SC6")
 		(at 81.28 48.26 0)
+		(mirror y)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -8498,10 +8515,9 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "55b9cfa0-ab42-4ee9-855a-2b882820f415")
 		(property "Reference" "U201"
-			(at 82.9311 40.64 0)
+			(at 79.6289 40.64 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -8512,7 +8528,7 @@
 			)
 		)
 		(property "Value" "USBLC6-2SC6"
-			(at 82.9311 43.18 0)
+			(at 79.6289 43.18 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -8523,7 +8539,7 @@
 			)
 		)
 		(property "Footprint" "Package_TO_SOT_SMD:SOT-23-6"
-			(at 82.55 54.61 0)
+			(at 80.01 54.61 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -8536,7 +8552,7 @@
 			)
 		)
 		(property "Datasheet" "file://${KIPRJMOD}/datasheets/protection/cd00050750.pdf"
-			(at 82.55 56.515 0)
+			(at 80.01 56.515 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -8847,6 +8863,84 @@
 			(project "picowy"
 				(path "/f9de454f-7e0c-4407-81a5-45ca3806b168"
 					(reference "#PWR0228")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 151.13 40.64 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "6180a8f0-4cb8-4518-bbf1-10d0f993921c")
+		(property "Reference" "#PWR0233"
+			(at 151.13 46.99 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 151.13 45.72 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 151.13 40.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 151.13 40.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 151.13 40.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "8866034a-c9f0-4073-9795-c6e2e1c05625")
+		)
+		(instances
+			(project "picowy"
+				(path "/f9de454f-7e0c-4407-81a5-45ca3806b168"
+					(reference "#PWR0233")
 					(unit 1)
 				)
 			)
@@ -12936,6 +13030,132 @@
 			(project "picowy"
 				(path "/f9de454f-7e0c-4407-81a5-45ca3806b168"
 					(reference "#PWR0202")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:C")
+		(at 151.13 36.83 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "d964c68b-cbdf-48a4-907d-f81635558975")
+		(property "Reference" "C211"
+			(at 154.94 35.5599 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "1u"
+			(at 154.94 38.0999 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
+			(at 152.0952 40.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" "file://${KIPRJMOD}/datasheets/passives/cap/KEM_C1002_X7R_SMD.pdf"
+			(at 151.13 36.83 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "1 µF ±10% 16V Ceramic Capacitor X7R 0603 (1608 Metric)"
+			(at 151.13 36.83 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Manufacturer" "KEMET"
+			(at 151.13 36.83 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Manufacturer PN" "C0603C105K4RACTU"
+			(at 151.13 36.83 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Rating" "16V"
+			(at 151.13 36.83 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Tolerance" "10%"
+			(at 151.13 36.83 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "b41fc09c-9282-4ddb-8d4c-616f67abe288")
+		)
+		(pin "2"
+			(uuid "b9a2b1e3-20f7-405f-a984-05799ac3bff2")
+		)
+		(instances
+			(project "picowy"
+				(path "/f9de454f-7e0c-4407-81a5-45ca3806b168"
+					(reference "C211")
 					(unit 1)
 				)
 			)
