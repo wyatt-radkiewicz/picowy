@@ -2,8 +2,7 @@
 This is the design document for the picowy. This is made to be a thin, low power tomagachi like
 device for my girlfriend. This design document goes over the basic system configuration and power
 requirements. It enumerates every major system component. It does not go into detail about the
-coding architecture or the physical design, those can be found in the firmware directory and the
-chassis directory respectivly.
+coding architecture, that can be found in the firmware directory.
 
 > *eklipsed, rev. 1.0.1*
 
@@ -14,6 +13,7 @@ chassis directory respectivly.
 4. [Touch Panel](#touch-panel)
 5. [FTDI Firmware Flasher](#ftdi-firmware-flasher)
 6. [Power System](#power-system)
+7. [Chassis](#chassis)
 
 ## Accelerometer
 > Ultra Low-Power 3 Axis Accelerometer
@@ -321,9 +321,9 @@ to not charge the battery at its max all the time.
 ### Fuel Gauge
 > System Side Impeadance Track Fuel Gauge
 - Manufacturer - *Texas Instruments*
-- Part Number - *BQ27426YZFR*
-- Datasheet - [BQ27426](hardware/datasheets/gauge/bq27426.pdf)
-- Technical Reference - [SLUUBB0](hardware/datasheets/gauge/sluubb0.pdf)
+- Part Number - *BQ27441DRZT-G1A*
+- Datasheet - [BQ27441-G1](hardware/datasheets/gauge/bq27441-g1.pdf)
+- Technical Reference - [SLUUAC9A](hardware/datasheets/gauge/sluuac9a.pdf)
 
 This is an optional component, and can be added to the $\mathrm{I^2C}$ bus on the STM32 to measure
 how much battery is left and how much current the system consumes.
@@ -345,3 +345,70 @@ the 3.3V rail.
 
 The boost converter suggested by the reference implementation for the OLED. Will have around a
 70% efficency a the OLED's advertised current.
+
+## Chassis
+### Front View
+#### Diagram
+```
+          __= = = = = = = = = = = = = = =+
+       _-"''"-_                          |
+     ."        ".                        |
+    /   +----+= =\= = = = = = = = =+     |
+   /  +--------+= \ = = = = =+     |     |
+  ,|  |+------+|= |.= =+     |     |     |
+  /   |||    |||   \   |DISP |TPNL |BATT |A
+  |   |||    |||   |   |     |     |     |
+  \   |+------+|= =/= =+     |     |     |
+   \  +--------+= / = = = = =+     |     |
+  | "-_ +----+=_-"=|= = = = = = = =+     |
+      '"-____-"'= = = = = = = = = = = = =+
+  |                |
+                    
+  |                |
+  +----------------+
+          B
+```
+#### Dimensions
+| PART                                                                                  | DIMENSION | DESCRIPTION                | SIZE (mm) |
+|---------------------------------------------------------------------------------------|-----------|----------------------------|-----------|
+|                                                                                       | A         | Device Height              | 70        |
+|                                                                                       | B         | Device Width               | 60        |
+| DISP [ER-OLED1.12-2 Section 3.1](hardware/datasheets/oled/er-oled1.12-2.pdf#page=6)   | H         | Display Height             | 30.3      |
+|                                                                                       | W         | Display Width              | 27.2      |
+|                                                                                       | C         | FPC Connector Length (min) | 19.15     |
+| TPNL [ER-TP1.44-1](hardware/datasheets/touch/er-tp1.44-1.pdf)                         | H         | Touch Panel Height (max)   | 30.7      |
+|                                                                                       | W         | Touch Panel Width (max)    | 34.9      |
+|                                                                                       | C         | FPC Connector Length (min) | 9.2       |
+| BATT [BL0105F2635161S1PCAT Section 8](hardware/datasheets/battery/battery.pdf#page=4) | H         | Battery Height (max)       | 37        |
+|                                                                                       | W         | Battery Width (max)        | 16.5      |
+
+### Side View
+#### Diagram
+```
+  ________.              .________      
+  __A_____|______________|________   }A
+  __B___|         C         |_____ = }B= = = =]= = = = =]
+        +-------------------+= = = = = = = = =]C        ]H
+    H     |_______D_______|          }D                 ]
+  _________|      F      |________ = = = = = =]= = = = =]
+  __E______|_____________|________ = }E= = = =]F
+  __G_____________________________   }G
+```
+
+#### Dimensions
+| DIMENSION                                                                          | DESCRIPTION                            | SIZE (mm)           |
+|------------------------------------------------------------------------------------|----------------------------------------|---------------------|
+| A                                                                                  | Acrylic Sheet Thickness (max)          | 1.1                 |
+| B                                                                                  | Acrylic Sheet Thickness (max)          | 1.1                 |
+| C [ER-TP1.44-1](hardware/datasheets/touch/er-tp1.44-1.pdf)                         | Touch Panel Thickness (max)            | 1.2 ($1.1\pm0.1$)   |
+| D [ER-OLED1.12-2 Section 3.1](hardware/datasheets/oled/er-oled1.12-2.pdf#page=6)   | OLED Display Thickness (max)           | 1.35 ($1.25\pm0.1$) |
+| E                                                                                  | PCB Thickness (max)                    | 1.7                 |
+| F  [BL0105F2635161S1PCAT Section 8](hardware/datasheets/battery/battery.pdf#page=4)| Battery Thickness (max)                | 2.8                 |
+| G                                                                                  | Acrylic Sheet Thickness (max)          | 1.1                 |
+
+- **Full Thickness**
+  - $nom = 8\mathrm{mm}$
+  - $min = 7.55\mathrm{mm}$
+- **PCB Acrylic Clearance** $= 2.5\pm0.35\mathrm{mm}$
+- **PCB Touch Panel Clearance** $= 2.45\pm0.2\mathrm{mm}$
+- **PCB OLED Clearance** $= 1.2\pm0.1\mathrm{mm}$

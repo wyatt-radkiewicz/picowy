@@ -3,3 +3,5 @@ hardware/*-backups/
 hardware/.history/
 hardware/*kicad_prl
 hardware/*lck
+hardware/*.gbr
+hardware/*.drl

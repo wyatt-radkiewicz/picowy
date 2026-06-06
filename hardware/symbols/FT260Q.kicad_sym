@@ -28,7 +28,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Package_DFN_QFN:WQFN-28-1EP_4x4mm_P0.4mm_EP2.7x2.7mm"
+		(property "Footprint" "picowy_footprints:WQFN-28_FTD"
 			(at 0 -23.876 0)
 			(show_name no)
 			(do_not_autoplace no)
