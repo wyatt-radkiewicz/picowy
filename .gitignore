@@ -1,7 +1,14 @@
-# KiCad backups and lock files
+# KiCad
 hardware/*-backups/
 hardware/.history/
 hardware/*kicad_prl
+hardware/*autosave*
+hardware/*.~lock*
 hardware/*lck
 hardware/*.gbr
 hardware/*.drl
+
+# Zig
+firmware/*.zig-cache/
+firmware/*zig-out/
+
