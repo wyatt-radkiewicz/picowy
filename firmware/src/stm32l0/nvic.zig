@@ -3,6 +3,7 @@ const std = @import("std");
 const regs = @import("regs.zig");
 
 /// Interrupt Service Request Numbers
+/// See RM0337 Table 53 "List of vectors"
 pub const IRQ = enum(i6) {
     // Exceptions
     nmi = -14,

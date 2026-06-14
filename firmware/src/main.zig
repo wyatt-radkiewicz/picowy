@@ -2,16 +2,14 @@ const std = @import("std");
 const stm32l0 = @import("stm32l0");
 
 comptime {
-    var vt = stm32l0.nvic.VectorTable{ .handlers = .init(.{}) };
-    vt.build();
+    stm32l0.nvic.VectorTable.build(.{ .handlers = .init(.{}) });
 }
 
 pub fn main() noreturn {
-    stm32l0.nvic.Config.apply(.{ .irqs = .init(.{
-        .wwdg = .{
-            .enable = true,
-            .priority = 0,
-        },
-    }) });
+    stm32l0.cpu.Config.apply(.{
+        .sleep_on_exit = true,
+        .sleep_deep = false,
+        .sev_on_pend = false,
+    });
     while (true) {}
 }
