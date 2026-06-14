@@ -17,12 +17,13 @@ pub fn build(b: *Build) void {
     const install_step = b.getInstallStep();
     const flash_step = b.step("flash", "Flash firmware with openocd (SWD ONLY)");
 
-    // Hardware and main module
+    // Hardware, main, and start module
     const stm32l0_mod = SmallModule.createModule(.{
         .optimize = optimize,
         .target = mcu_target,
         .root_source_file = b.path("src/stm32l0.zig"),
     }, b);
+
     const picowy_mod = SmallModule.createModule(.{
         .optimize = optimize,
         .target = mcu_target,
@@ -30,10 +31,18 @@ pub fn build(b: *Build) void {
     }, b);
     picowy_mod.addImport("stm32l0", stm32l0_mod);
 
+    const start_mod = SmallModule.createModule(.{
+        .optimize = optimize,
+        .target = mcu_target,
+        .root_source_file = b.path("src/start.zig"),
+    }, b);
+    start_mod.addImport("stm32l0", stm32l0_mod);
+    start_mod.addImport("picowy", picowy_mod);
+
     // Building firmware
     const picowy_exe = b.addExecutable(.{
         .name = "picowy",
-        .root_module = picowy_mod,
+        .root_module = start_mod,
     });
     picowy_exe.setLinkerScript(b.path("src/stm32l0/linker.ld"));
     install_step.dependOn(&b.addInstallArtifact(picowy_exe, .{}).step);

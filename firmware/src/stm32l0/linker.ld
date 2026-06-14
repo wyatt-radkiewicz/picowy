@@ -25,7 +25,7 @@ SECTIONS {
 	.data : {
 		data_start = .;
 		*(*.data)
-		data_end = .;
+		data_size = . - data_start;
 	} >flash
 
 	sram_start = 0x20000000;
@@ -34,7 +34,7 @@ SECTIONS {
 		. = ALIGN(4);
 		bss_start = .;
 		*(*.bss)
-		bss_end = .;
+		bss_size = . - bss_start;
 	} >sram
 
 	stack_start = 0x20000000 + 2K;
