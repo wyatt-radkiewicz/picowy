@@ -1,5 +1,6 @@
 //! Exception registers and layer
 const std = @import("std");
+const regs = @import("regs.zig");
 
 /// Interrupt Service Request Numbers
 pub const IRQ = enum(i6) {
@@ -39,42 +40,95 @@ pub const IRQ = enum(i6) {
     usart1,
     usart2,
     lpuart1_aes,
+
+    /// Config for an IRQ
+    pub const Config = struct {
+        enable: bool,
+        priority: u2,
+    };
 };
 
-/// Exception Handler
-pub const Handler = *const fn () callconv(.{ .arm_interrupt = .{} }) void;
+/// Vector table abstraction
+pub const VectorTable = struct {
+    handlers: std.EnumMap(IRQ, Handler),
 
-/// Builds and exports the vector table
-pub fn handlers(comptime handlers_map: std.EnumMap(IRQ, ?Handler)) void {
-    // Unused vector thunk
-    const Entry = *allowzero const anyopaque;
-    const thunk: Entry = @ptrCast(&struct {
-        pub fn inner() callconv(.{ .arm_interrupt = .{} }) void {}
-    }.inner);
+    /// Exception Handler
+    pub const Handler = *const fn () callconv(.{ .arm_interrupt = .{} }) void;
 
-    // Initialize the table
-    var table_buffer = [2]Entry{
-        @extern(Entry, .{ .name = "stack_start" }),
-        @extern(Entry, .{ .name = "_start" }),
-    } ++ [1]Entry{thunk} ** 62;
-    var table_len = 16;
+    /// Builds and exports the vector table
+    pub fn build(comptime this: @This()) void {
+        // Unused vector thunk
+        const Entry = *allowzero const anyopaque;
+        const thunk: Entry = @ptrCast(&struct {
+            pub fn inner() callconv(.{ .arm_interrupt = .{} }) void {}
+        }.inner);
 
-    // Add each entry
-    var map = handlers_map;
-    var iter = map.iterator();
-    while (iter.next()) |entry| {
-        const handler = entry.value.* orelse continue;
-        const number: u6 = @intCast(@as(i8, @intFromEnum(entry.key)) + 16);
+        // Initialize the table
+        var table_buffer = [2]Entry{
+            @extern(Entry, .{ .name = "stack_start" }),
+            @extern(Entry, .{ .name = "_start" }),
+        } ++ [1]Entry{thunk} ** 62;
+        var table_len = 16;
 
-        table_len = number + 1;
-        table_buffer[number] = @ptrCast(handler);
+        // Add each entry
+        var map = this.handlers;
+        var iter = map.iterator();
+        while (iter.next()) |entry| {
+            const number: u6 = @intCast(@as(i8, @intFromEnum(entry.key)) + 16);
+            table_len = @max(table_len, number + 1);
+            table_buffer[number] = @ptrCast(entry.value.*);
+        }
+
+        // Export the table
+        const final_table = table_buffer[0..table_len].*;
+        @export(&final_table, .{
+            .name = "vectors",
+            .linkage = .strong,
+            .section = ".vectors",
+        });
     }
+};
 
-    // Export the table
-    const final_table = table_buffer[0..table_len].*;
-    @export(&final_table, .{
-        .name = "vectors",
-        .linkage = .strong,
-        .section = ".vectors",
-    });
-}
+/// Config for NVIC
+pub const Config = struct {
+    irqs: std.EnumMap(IRQ, IRQ.Config),
+
+    /// Apply the NVIC config
+    pub fn apply(comptime this: @This()) void {
+        // This allows us to iterate over the map
+        comptime var map = this.irqs;
+
+        // Enable certain ISRs
+        if (comptime iser: {
+            var bitset: u32 = 0;
+            var iter = map.iterator();
+            while (iter.next()) |cfg| {
+                const i = std.math.cast(u5, @intFromEnum(cfg.key)) orelse continue;
+                bitset |= @as(u32, @intFromBool(cfg.value.enable)) << i;
+            }
+            break :iser @as(?u32, if (bitset == 0) null else bitset);
+        }) |bits| {
+            regs.nvic.iser.* |= bits;
+        }
+
+        // Disable other ISRs
+        if (comptime icer: {
+            var bitset: u32 = 0;
+            var iter = map.iterator();
+            while (iter.next()) |cfg| {
+                const i = std.math.cast(u5, @intFromEnum(cfg.key)) orelse continue;
+                bitset |= @as(u32, @intFromBool(!cfg.value.enable)) << i;
+            }
+            break :icer @as(?u32, if (bitset == 0) null else bitset);
+        }) |bits| {
+            regs.nvic.icer.* |= bits;
+        }
+
+        // Set priorities
+        comptime var iter = map.iterator();
+        inline while (comptime iter.next()) |cfg| {
+            const i = comptime std.math.cast(u5, @intFromEnum(cfg.key)) orelse continue;
+            regs.nvic.pri[i] = @as(u8, cfg.value.priority) << 6;
+        }
+    }
+};

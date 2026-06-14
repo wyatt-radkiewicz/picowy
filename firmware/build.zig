@@ -34,7 +34,7 @@ pub fn build(b: *Build) void {
     const start_mod = SmallModule.createModule(.{
         .optimize = optimize,
         .target = mcu_target,
-        .root_source_file = b.path("src/start.zig"),
+        .root_source_file = b.path("src/stm32l0/start.zig"),
     }, b);
     start_mod.addImport("stm32l0", stm32l0_mod);
     start_mod.addImport("picowy", picowy_mod);
