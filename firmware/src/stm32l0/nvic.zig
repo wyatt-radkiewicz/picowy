@@ -1,4 +1,4 @@
-//! Exception registers and layer
+//! NVIC Subsystem
 const std = @import("std");
 const regs = @import("regs.zig");
 
@@ -44,7 +44,10 @@ pub const IRQ = enum(i6) {
 
     /// Config for an IRQ
     pub const Config = struct {
+        /// PM0223 Section 4.2.2 and Section 4.2.3
         enable: bool,
+
+        /// PM0223 Section 4.2.6
         priority: u2,
     };
 };
