@@ -163,7 +163,7 @@ pub const Config = struct {
     /// Apply the config
     /// This is applied in respect to a previous config, so that transitions to new clock sources
     /// can occur correctly
-    pub fn apply(comptime this: @This(), comptime prev: @This()) @This() {
+    pub fn apply(comptime this: @This(), comptime prev: @This()) void {
         // Turn on any clocks now and update their values
         // HSE clock
         if (comptime !std.meta.eql(this.hse, prev.hse) and this.hse != null) {
@@ -340,7 +340,5 @@ pub const Config = struct {
                 .usart1smen = false,
             };
         }
-
-        return this;
     }
 };

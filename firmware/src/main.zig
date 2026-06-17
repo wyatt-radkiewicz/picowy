@@ -1,8 +1,9 @@
 const std = @import("std");
 const stm32l0 = @import("stm32l0");
 
+// Build the vector table
 comptime {
-    stm32l0.nvic.VectorTable.build(.{ .handlers = .init(.{}) });
+    stm32l0.nvic.exportVectorTable(.init(.{}));
 }
 
 pub fn main() noreturn {
@@ -17,7 +18,7 @@ pub fn main() noreturn {
     });
 
     // Configure clocks
-    const rcc_config = stm32l0.rcc.Config.apply(.{
+    const rcc_config = comptime stm32l0.rcc.Config{
         .sysclk = .msi,
         .msi = .@"2.097 MHz",
         .run = .{
@@ -30,8 +31,8 @@ pub fn main() noreturn {
             .pwr = true,
             .lptim1 = true,
         },
-    }, .{});
-    _ = rcc_config;
+    };
+    rcc_config.apply(.{});
 
     // Configure flash
     stm32l0.flash.Config.apply(.{
@@ -41,6 +42,71 @@ pub fn main() noreturn {
         .prefetch_enable = true,
         .wait_states = 0,
     });
+
+    // Configure GPIO pins
+    const pins_cfg = comptime stm32l0.gpio.Config{
+        .a = .{
+            .@"4" = .{ .output = .{
+                .type = .open_drain,
+                .pull = .up,
+                .speed = .low,
+            } },
+            .@"5" = .{ .alt = .{
+                .type = .push_pull,
+                .pull = .up,
+                .speed = .low,
+                .func = .spi1_sck,
+            } },
+            .@"6" = .{ .alt = .{
+                .type = .push_pull,
+                .pull = .up,
+                .speed = .low,
+                .func = .spi1_miso,
+            } },
+            .@"7" = .{ .alt = .{
+                .type = .push_pull,
+                .pull = .up,
+                .speed = .low,
+                .func = .spi1_mosi,
+            } },
+            .@"8" = .{ .output = .{
+                .type = .open_drain,
+                .pull = .up,
+                .speed = .low,
+            } },
+        },
+        .b = .{
+            .@"0" = .{ .output = .{
+                .type = .open_drain,
+                .pull = .up,
+                .speed = .low,
+            } },
+            .@"1" = .{ .output = .{
+                .type = .open_drain,
+                .pull = .up,
+                .speed = .low,
+            } },
+            .@"3" = .{ .input = .{
+                .pull = null,
+            } },
+            .@"4" = .{ .input = .{
+                .pull = null,
+            } },
+            .@"6" = .{ .alt = .{
+                .type = .push_pull,
+                .pull = .up,
+                .speed = .low,
+                .func = .i2c1_scl,
+            } },
+            .@"7" = .{ .alt = .{
+                .type = .push_pull,
+                .pull = .up,
+                .speed = .low,
+                .func = .i2c1_sda,
+            } },
+        },
+    };
+    pins_cfg.apply(.{});
 
     // Set power level
     stm32l0.pwr.VCore.apply(.@"1.2V");

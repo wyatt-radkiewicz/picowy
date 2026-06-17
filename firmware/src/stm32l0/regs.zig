@@ -344,3 +344,41 @@ pub const rcc = struct {
     };
     pub const csr: *volatile CSR = @ptrFromInt(base_addr + 0x50);
 };
+
+/// RM0377 Section 8.4 "GPIO registers"
+pub const GPIO = struct {
+    /// RM0377 Section 8.4.1 "GPIO port mode register (GPIOx_MODER)"
+    moder: u32,
+
+    /// RM0377 Section 8.4.2 "GPIO port output type register (GPIOx_OTYPER)"
+    otyper: u32,
+
+    /// RM0377 Section 8.4.3 "GPIO port output speed register (GPIOx_OSPEEDR)"
+    ospeedr: u32,
+
+    /// RM0377 Section 8.4.4 "GPIO port pull-up/pull-down register (GPIOx_PUPDR)"
+    pupdr: u32,
+
+    /// RM0377 Section 8.4.5 "GPIO port input data register (GPIOx_IDR)"
+    idr: u32,
+
+    /// RM0377 Section 8.4.6 "GPIO port output data register (GPIOx_ODR)"
+    odr: u32,
+
+    /// RM0377 Section 8.4.7 "GPIO port bit set/reset register (GPIOx_BSRR)"
+    bsrr: u32,
+
+    /// RM0377 Section 8.4.8 "GPIO port configuration lock register (GPIOx_LCKR)"
+    lckr: u32,
+
+    /// RM0377 Section 8.4.9 "GPIO alternate function low register (GPIOx_AFRL)"
+    afr: [2]u32,
+
+    /// RM0377 Section 8.4.7 "GPIO port bit reset register (GPIOx_BRR)"
+    brr: u32,
+};
+
+/// PM0223 Table 29 "Summary of the SCB Registers"
+pub const gpioa: *volatile GPIO = @ptrFromInt(0x5000_0000);
+pub const gpiob: *volatile GPIO = @ptrFromInt(0x5000_0400);
+pub const gpioc: *volatile GPIO = @ptrFromInt(0x5000_0800);

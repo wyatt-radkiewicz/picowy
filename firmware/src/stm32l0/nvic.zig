@@ -43,96 +43,61 @@ pub const IRQ = enum(i6) {
     lpuart1_aes,
 
     /// Config for an IRQ
-    pub const Config = struct {
+    pub const Config = union {
         /// PM0223 Section 4.2.2 and Section 4.2.3
-        enable: bool,
+        disabled: void,
 
+        /// Provide a priority for the interrupt
         /// PM0223 Section 4.2.6
-        priority: u2,
+        enabled: u2,
     };
-};
 
-/// Vector table abstraction
-pub const VectorTable = struct {
-    handlers: std.EnumMap(IRQ, Handler),
-
-    /// Exception Handler
-    pub const Handler = *const fn () callconv(.{ .arm_interrupt = .{} }) void;
-
-    /// Builds and exports the vector table
-    pub fn build(comptime this: @This()) void {
-        // Unused vector thunk
-        const Entry = *allowzero const anyopaque;
-        const thunk: Entry = @ptrCast(&struct {
-            pub fn inner() callconv(.{ .arm_interrupt = .{} }) void {}
-        }.inner);
-
-        // Initialize the table
-        var table_buffer = [2]Entry{
-            @extern(Entry, .{ .name = "stack_start" }),
-            @extern(Entry, .{ .name = "_start" }),
-        } ++ [1]Entry{thunk} ** 62;
-        var table_len = 16;
-
-        // Add each entry
-        var map = this.handlers;
-        var iter = map.iterator();
-        while (iter.next()) |entry| {
-            const number: u6 = @intCast(@as(i8, @intFromEnum(entry.key)) + 16);
-            table_len = @max(table_len, number + 1);
-            table_buffer[number] = @ptrCast(entry.value.*);
-        }
-
-        // Export the table
-        const final_table = table_buffer[0..table_len].*;
-        @export(&final_table, .{
-            .name = "vectors",
-            .linkage = .strong,
-            .section = ".vectors",
-        });
-    }
-};
-
-/// Config for NVIC
-pub const Config = struct {
-    irqs: std.EnumMap(IRQ, IRQ.Config),
-
-    /// Apply the NVIC config
-    pub fn apply(comptime this: @This()) void {
-        // This allows us to iterate over the map
-        comptime var map = this.irqs;
-
-        // Enable certain ISRs
-        if (comptime iser: {
-            var bitset: u32 = 0;
-            var iter = map.iterator();
-            while (iter.next()) |cfg| {
-                const i = std.math.cast(u5, @intFromEnum(cfg.key)) orelse continue;
-                bitset |= @as(u32, @intFromBool(cfg.value.enable)) << i;
-            }
-            break :iser @as(?u32, if (bitset == 0) null else bitset);
-        }) |bits| {
-            regs.nvic.iser.* |= bits;
-        }
-
-        // Disable other ISRs
-        if (comptime icer: {
-            var bitset: u32 = 0;
-            var iter = map.iterator();
-            while (iter.next()) |cfg| {
-                const i = std.math.cast(u5, @intFromEnum(cfg.key)) orelse continue;
-                bitset |= @as(u32, @intFromBool(!cfg.value.enable)) << i;
-            }
-            break :icer @as(?u32, if (bitset == 0) null else bitset);
-        }) |bits| {
-            regs.nvic.icer.* |= bits;
-        }
-
-        // Set priorities
-        comptime var iter = map.iterator();
-        inline while (comptime iter.next()) |cfg| {
-            const i = comptime std.math.cast(u5, @intFromEnum(cfg.key)) orelse continue;
-            regs.nvic.pri[i] = @as(u8, cfg.value.priority) << 6;
+    /// Configures the interrupt
+    pub fn configure(comptime this: @This(), comptime config: Config) void {
+        const irq_num = std.math.cast(u5, @intFromEnum(this)) orelse
+            @compileError("Configuring exceptions is not supported (currently).");
+        switch (config) {
+            .disabled => regs.nvic.icer |= @as(u32, 1) << irq_num,
+            .enabled => |prio| {
+                regs.nvic.iser |= @as(u32, 1) << irq_num;
+                regs.nvic.pri[irq_num] = @as(u8, prio) << 6;
+            },
         }
     }
 };
+
+/// Exception Handler
+pub const Handler = *const fn () callconv(.{ .arm_interrupt = .{} }) void;
+
+/// Builds a vector table
+pub fn exportVectorTable(exception_handlers: std.EnumMap(IRQ, Handler)) void {
+    // Unused vector thunk
+    const Entry = *allowzero const anyopaque;
+    const thunk: Entry = @ptrCast(&struct {
+        pub fn inner() callconv(.{ .arm_interrupt = .{} }) void {}
+    }.inner);
+
+    // Initialize the table
+    var table_buffer = [2]Entry{
+        @extern(Entry, .{ .name = "stack_start" }),
+        @extern(Entry, .{ .name = "_start" }),
+    } ++ [1]Entry{thunk} ** 62;
+    var table_len = 16;
+
+    // Add each entry
+    var map = exception_handlers;
+    var iter = map.iterator();
+    while (iter.next()) |entry| {
+        const number: u6 = @intCast(@as(i8, @intFromEnum(entry.key)) + 16);
+        table_len = @max(table_len, number + 1);
+        table_buffer[number] = @ptrCast(entry.value.*);
+    }
+
+    // Export the table
+    const final_table = table_buffer[0..table_len].*;
+    @export(&final_table, .{
+        .name = "vectors",
+        .linkage = .strong,
+        .section = ".vectors",
+    });
+}
