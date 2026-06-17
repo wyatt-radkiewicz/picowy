@@ -1,6 +1,18 @@
 /// FLASH Subsystem
 const regs = @import("regs.zig");
 
+/// Apply the config
+pub fn configure(comptime config: Config) void {
+    regs.flash.acr.* = comptime regs.flash.ACR{
+        .latency = config.wait_states,
+        .prften = config.prefetch_enable,
+        .sleep_pd = config.sleep_power_down,
+        .run_pd = false,
+        .disab_buf = config.disable_cache,
+        .pre_read = config.pre_read,
+    };
+}
+
 /// Flash Configuration
 pub const Config = struct {
     /// RM0377 Section 3.7.1 "Access control register (FLASH_ACR)"
@@ -47,16 +59,4 @@ pub const Config = struct {
     ///     is ongoing.
     /// Note: It is automatically reset every time the DISAB_BUF bit (in this register) is set to 1.
     pre_read: bool,
-
-    /// Apply the config
-    pub fn apply(comptime this: @This()) void {
-        regs.flash.acr.* = comptime regs.flash.ACR{
-            .latency = this.wait_states,
-            .prften = this.prefetch_enable,
-            .sleep_pd = this.sleep_power_down,
-            .run_pd = false,
-            .disab_buf = this.disable_cache,
-            .pre_read = this.pre_read,
-        };
-    }
 };

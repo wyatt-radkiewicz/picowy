@@ -15,6 +15,15 @@ pub inline fn waitForInterrupt() void {
     asm volatile ("wfi");
 }
 
+/// Configure the CPU
+pub fn configure(comptime config: Config) void {
+    regs.scb.scr.* = comptime regs.scb.SCR{
+        .sleeponexit = config.sleep_on_exit,
+        .sevonpend = config.sev_on_pend,
+        .sleepdeep = config.sleep_deep,
+    };
+}
+
 /// CPU Configuration
 pub const Config = struct {
     /// PM0223 Section 4.3.6 "System Control Register"
@@ -40,13 +49,4 @@ pub const Config = struct {
     /// next WFE.
     /// The processor also wakes up on execution of an SEV instruction or an external event.
     sev_on_pend: bool = false,
-
-    /// Apply the config
-    pub fn apply(comptime this: @This()) void {
-        regs.scb.scr.* = comptime regs.scb.SCR{
-            .sleeponexit = this.sleep_on_exit,
-            .sevonpend = this.sev_on_pend,
-            .sleepdeep = this.sleep_deep,
-        };
-    }
 };

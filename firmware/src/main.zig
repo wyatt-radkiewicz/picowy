@@ -11,7 +11,7 @@ pub fn main() noreturn {
     stm32l0.cpu.enableInterrupts(false);
 
     // Make CPU sleep on handler exit
-    stm32l0.cpu.Config.apply(.{
+    stm32l0.cpu.configure(.{
         .sleep_on_exit = true,
         .sleep_deep = false,
         .sev_on_pend = false,
@@ -35,7 +35,7 @@ pub fn main() noreturn {
     rcc_config.apply(.{});
 
     // Configure flash
-    stm32l0.flash.Config.apply(.{
+    stm32l0.flash.configure(.{
         .sleep_power_down = true,
         .disable_cache = false,
         .pre_read = true,
@@ -109,7 +109,7 @@ pub fn main() noreturn {
     pins_cfg.apply(.{});
 
     // Set power level
-    stm32l0.pwr.VCore.apply(.@"1.2V");
+    stm32l0.pwr.setVCore(.@"1.2V");
 
     // Enable interrupts and start loop
     stm32l0.cpu.enableInterrupts(true);
