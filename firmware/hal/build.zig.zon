@@ -1,0 +1,23 @@
+// build.zig.zon
+// See https://codeberg.org/ziglang/zig/src/branch/master/doc/build.zig.zon.md for formatting
+.{
+    // Package name Zig HAL
+    .name = .zhal,
+
+    // Project version number
+    .version = "0.0.0",
+
+    // Fingerprint (don't change!)
+    .fingerprint = 0x5be072e9087585cd,
+
+    .minimum_zig_version = "0.16.0",
+
+    .dependencies = .{},
+
+    // Paths belonging to the package
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}
