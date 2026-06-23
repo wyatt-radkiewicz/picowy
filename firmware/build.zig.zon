@@ -1,13 +1,15 @@
-// See https://codeberg.org/ziglang/zig/src/branch/master/doc/build.zig.zon.md for documentation.
+// Firmware manifest
+// See https://codeberg.org/ziglang/zig/raw/branch/master/doc/build.zig.zon.md for schema
 .{
     .name = .picowy,
-    .fingerprint = 0xd7d4b074ec429a8,
     .version = "0.0.0",
+    .fingerprint = 0xd7d4b07faf4c4eb,
     .minimum_zig_version = "0.16.0",
     .dependencies = .{},
     .paths = .{
         "build.zig.zon",
         "build.zig",
-        "src/",
+        "app",
+        "hal",
     },
 }
