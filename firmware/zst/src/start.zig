@@ -1,11 +1,10 @@
 //! STM32 Entry Point
 const main = @import("main");
 const zst = @import("zst");
-const options = @import("options");
 
 comptime {
     // Export main's vector table
-    @export(&@field(main, options.vector_table_name), .{
+    @export(&main.vector_table, .{
         .name = "vector_table",
         .linkage = .strong,
         .section = ".vector_table",
@@ -26,5 +25,5 @@ pub export fn _start() void {
     @memset(bss_start[0..bss_size], 0);
 
     // Call main
-    @field(main, options.main_func_name)();
+    main.main();
 }

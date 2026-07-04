@@ -1,41 +1,47 @@
 const std = @import("std");
+const target = @import("src/target.zig");
 
-/// STM32 Target
-pub const Target = @import("src/lib/target.zig").Target;
+const Build = std.Build;
+const Module = Build.Module;
+const Compile = Build.Step.Compile;
+const WriteFile = Build.Step.WriteFile;
+const LazyPath = Build.LazyPath;
 
-/// Options to be passed into a module
+/// STM32 target model
+pub const Model = target.Model;
+
+/// Options to be passed in when creating a module
 pub const CreateModuleOptions = struct {
-    root_source_file: std.Build.LazyPath,
+    root_source_file: LazyPath,
     optimize: std.builtin.OptimizeMode,
+    model: Model,
 };
 
-/// Works exactly like std.Build.createModule, but uses a custom module creation command that
-/// optimizes the module options for the target hardware
-pub fn createModule(b: *std.Build, options: CreateModuleOptions) *std.Build.Module {
-    return b.createModule(getModuleOptions(b, options));
+/// Creates a module
+pub fn createModule(b: *Build, options: CreateModuleOptions) *Module {
+    return b.createModule(getCreateModuleOptions(b, options));
 }
 
-/// Works exactly like std.Build.addModule, but uses a custom module creation command that
-/// optimizes the module options for the target hardware
-pub fn addModule(b: *std.Build, name: []const u8, options: CreateModuleOptions) *std.Build.Module {
-    return b.addModule(name, getModuleOptions(b, options));
+/// Adds a module
+pub fn addModule(b: *Build, name: []const u8, options: CreateModuleOptions) *Module {
+    return b.addModule(name, getCreateModuleOptions(b, options));
 }
 
-/// Gets the module options
-fn getModuleOptions(b: *std.Build, options: CreateModuleOptions) std.Build.Module.CreateOptions {
+/// Internal function to get Zig build tool create module options
+fn getCreateModuleOptions(b: *Build, options: CreateModuleOptions) Module.CreateOptions {
     return .{
         // Standard options
         .root_source_file = options.root_source_file,
-        .target = getTarget(b),
+        .target = b.resolveTargetQuery(options.model.getTarget()),
         .optimize = options.optimize,
 
-        // Options to optimize for space
-        .no_builtin = true,
-        .omit_frame_pointer = true,
+        // Optimize options
         .code_model = .small,
-        .error_tracing = false,
         .link_libc = false,
         .link_libcpp = false,
+        .error_tracing = false,
+        .no_builtin = true,
+        .omit_frame_pointer = true,
         .sanitize_c = .off,
         .sanitize_thread = false,
         .single_threaded = true,
@@ -45,113 +51,86 @@ fn getModuleOptions(b: *std.Build, options: CreateModuleOptions) std.Build.Modul
     };
 }
 
-/// Custom options for the target hardware
+/// Options to be passed in when creating an executable
 pub const AddExecutableOptions = struct {
     name: []const u8,
-    root_module: *std.Build.Module,
-    version: ?std.SemanticVersion = null,
-    vector_table_name: []const u8 = "vector_table",
-    main_func_name: []const u8 = "main",
+    root_module: *Module,
+    model: Model,
 };
 
-/// Works like add executable but with custom options, pass in the dependency of zst to itself
-pub fn addExecutable(
-    zst: *std.Build.Dependency,
-    options: AddExecutableOptions,
-) *std.Build.Step.Compile {
-    return addExecutable2(zst.builder, zst.module("zst"), zst.artifact("make-ld"), options);
+/// Adds an executable to the build
+pub fn addExecutable(zst: *Build.Dependency, options: AddExecutableOptions) *Compile {
+    return addExecutable2(zst.builder, zst.module("zst"), options);
 }
 
-/// Works like add executable but with custom options
-fn addExecutable2(
-    b: *std.Build,
-    zst: *std.Build.Module,
-    makeld: *std.Build.Step.Compile,
-    options: AddExecutableOptions,
-) *std.Build.Step.Compile {
-    // Executable options
-    const start_options = b.addOptions();
-    start_options.addOption([]const u8, "vector_table_name", options.vector_table_name);
-    start_options.addOption([]const u8, "main_func_name", options.main_func_name);
-
-    // Create the start module
+/// Adds an executable to the build, needs the zst module and the zst write files provided
+fn addExecutable2(b: *Build, zst: *Module, options: AddExecutableOptions) *Compile {
+    // Create the start module to call the root module
     const start_mod = createModule(b, .{
-        .root_source_file = b.path("src/start/main.zig"),
+        .root_source_file = b.path("src/start.zig"),
+        .model = options.model,
         .optimize = .ReleaseSmall,
     });
-    start_mod.addImport("main", options.root_module);
     start_mod.addImport("zst", zst);
-    start_mod.addImport("options", start_options.createModule());
+    start_mod.addImport("main", options.root_module);
 
-    // Generate the linker script
-    const gen_script = b.addRunArtifact(makeld);
-    gen_script.addFileArg(b.path("src/linker/targets/stm32l0x4.zon"));
-    const linker_script = gen_script.addOutputFileArg("linker.ld");
+    // Create the linker script
+    const linker_script_dir = b.addWriteFiles();
+    const linker_script = linker_script_dir.add(
+        b.fmt("{s}.ld", .{@tagName(options.model)}),
+        b.fmt("{f}", .{options.model.getMemoryConfig()}),
+    );
 
     // Create the final executable
     const exe = b.addExecutable(.{
         .name = options.name,
         .root_module = start_mod,
-        .version = options.version,
     });
     exe.setLinkerScript(linker_script);
-    exe.step.dependOn(&gen_script.step);
     return exe;
 }
 
-/// Gets the target for the MCU
-pub fn getTarget(b: *std.Build) std.Build.ResolvedTarget {
-    return b.resolveTargetQuery(.{
-        .cpu_arch = .arm,
-        .cpu_model = .{ .explicit = &std.Target.arm.cpu.cortex_m0plus },
-
-        .os_tag = .freestanding,
-
-        .abi = .eabi,
-    });
-}
-
 /// Build script
-pub fn build(b: *std.Build) void {
-    // Optimize options
-    const target = b.standardTargetOptions(.{});
+pub fn build(b: *Build) void {
+    // Get build options
+    const model = b.option(Model, "model", "Which STM32 model to target.") orelse
+        std.debug.panic("Expected an stm32 target model!", .{});
     const optimize = b.standardOptimizeOption(.{});
 
-    // Standard build steps
-    const examples_step = b.step("examples", "Builds all of the examples");
+    // Get top level build rules
+    const examples_step = b.step(
+        "examples",
+        "Build and install each example to the prefix directory.",
+    );
 
-    // Create the linker script generator
-    const makeld_mod = b.createModule(.{
-        .root_source_file = b.path("src/linker/make_ld.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-    const makeld_exe = b.addExecutable(.{
-        .name = "make-ld",
-        .root_module = makeld_mod,
-    });
-
-    // Create the library module
+    // Build the main zst module
     const zst_mod = addModule(b, "zst", .{
-        .root_source_file = b.path("src/lib/root.zig"),
+        .root_source_file = b.path("src/root.zig"),
         .optimize = optimize,
+        .model = model,
     });
 
-    // Build the examples
-    const example_names = [_][]const u8{
-        "base",
+    // Build each example
+    const examples = [_][]const u8{
+        "nvic",
     };
-    for (example_names) |example_name| {
+    for (examples) |example_name| {
+        // Create the root module
         const example_mod = createModule(b, .{
             .root_source_file = b.path(b.pathJoin(&.{ "examples", example_name, "main.zig" })),
             .optimize = optimize,
+            .model = model,
         });
         example_mod.addImport("zst", zst_mod);
 
-        const example_exe = addExecutable2(b, zst_mod, makeld_exe, .{
-            .name = example_name,
+        // Create the executable
+        const example_exe = addExecutable2(b, zst_mod, .{
+            .name = b.fmt("example-{s}", .{example_name}),
             .root_module = example_mod,
+            .model = model,
         });
+
+        // Install the executable to the prefix directory
         const example_install = b.addInstallArtifact(example_exe, .{});
         examples_step.dependOn(&example_install.step);
     }

@@ -42,15 +42,15 @@ pub const IRQ = enum(i6) {
 
     // Enables or disables the interrupt
     pub fn setEnable(this: @This(), enable: bool) void {
-        switch (enable) {
-            true => regs.iser.* |= 1 << @intCast(@intFromEnum(this)),
-            false => regs.icer.* |= 1 << @intCast(@intFromEnum(this)),
-        }
+        (switch (enable) {
+            true => regs.iser,
+            false => regs.icer,
+        }).* |= @as(u32, 1) << @intCast(@intFromEnum(this));
     }
 
     // Sets the priority of the interrupt
     pub fn setPriority(this: @This(), pri: u8) void {
-        regs.ipr[@intFromEnum(this)] = pri;
+        regs.ipr[@intCast(@intFromEnum(this))] = pri;
     }
 };
 
