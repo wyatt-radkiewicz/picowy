@@ -1,0 +1,13 @@
+// See https://codeberg.org/ziglang/zig/src/branch/master/doc/build.zig.zon.md
+.{
+    .name = .picowy,
+    .version = "0.0.0",
+    .fingerprint = 0xd7d4b0700ba7ea3,
+    .minimum_zig_version = "0.16.0",
+    .dependencies = .{},
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src/",
+    },
+}
