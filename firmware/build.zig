@@ -1,36 +1,70 @@
 const std = @import("std");
 
+/// Each backend the HAL supports goes here
+const Backend = enum {
+    sdl3,
+
+    /// Gets the resovled target for this backend
+    fn getTarget(this: @This(), b: *std.Build) std.Build.ResolvedTarget {
+        return switch (this) {
+            .sdl3 => b.resolveTargetQuery(.{}),
+        };
+    }
+};
+
 pub fn build(b: *std.Build) void {
-    const target = b.standardTargetOptions(.{});
+    // Get build options
+    const backend = b.option(Backend, "backend", "Which backend to use for the HAL.") orelse
+        .sdl3;
     const optimize = b.standardOptimizeOption(.{});
 
-    const hal_mod = b.createModule(.{
-        .root_source_file = b.path("src/hal/sdl3/root.zig"),
-        .optimize = optimize,
-        .target = target,
+    // C Compiler configuration
+    const base_flags = &[_][]const u8{"-std=c23"};
+
+    // Top level build steps
+    const run_step = b.step("run", "Run and or flash the app.");
+
+    // Create the base module
+    const mod = switch (backend) {
+        .sdl3 => b.createModule(.{
+            .target = backend.getTarget(b),
+            .optimize = optimize,
+            .link_libc = true,
+            .sanitize_c = .off,
+        }),
+    };
+    mod.addCSourceFiles(.{
+        .root = b.path(""),
+        .flags = base_flags,
+        .files = &.{
+            "src/app.c",
+        },
     });
-    const app_mod = b.createModule(.{
-        .root_source_file = b.path("src/app/root.zig"),
-        .optimize = optimize,
-        .target = target,
-    });
-    app_mod.addImport("hal", hal_mod);
-    const start_mod = b.createModule(.{
-        .root_source_file = b.path("src/hal/sdl3/main.zig"),
-        .optimize = optimize,
-        .target = target,
-    });
-    start_mod.addImport("hal", hal_mod);
-    start_mod.addImport("app", app_mod);
-    start_mod.linkSystemLibrary("sdl3", .{
-        .needed = true,
-        .use_pkg_config = .yes,
-        .preferred_link_mode = .static,
-    });
-    const exe = b.addExecutable(.{
-        .name = "picowy-sdl3",
-        .root_module = start_mod,
-    });
-    const exe_install = b.addInstallArtifact(exe, .{});
-    b.getInstallStep().dependOn(&exe_install.step);
+
+    // Add in which backend we are using
+    switch (backend) {
+        .sdl3 => {
+            mod.addCSourceFile(.{
+                .flags = base_flags,
+                .file = b.path("src/hal/sdl3.c"),
+            });
+            mod.linkSystemLibrary("sdl3", .{
+                .needed = true,
+                .use_pkg_config = .yes,
+                .preferred_link_mode = .static,
+            });
+        },
+    }
+
+    // Build the executable and install it
+    switch (backend) {
+        .sdl3 => {
+            const exe = b.addExecutable(.{
+                .name = "picowy-sdl3",
+                .root_module = mod,
+            });
+            b.installArtifact(exe);
+            run_step.dependOn(&b.addRunArtifact(exe).step);
+        },
+    }
 }
