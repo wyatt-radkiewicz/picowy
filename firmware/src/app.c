@@ -4,35 +4,20 @@
 #include "app.h"
 #include "hal.h"
 
-#define MAX_SPRITES 64
-
-// Application state
-struct appstate {
-    // Touch calibration data
-    struct {
-        struct vec2 points[4];
-        uint32_t npoints;
-
-        struct vec2 offset;
-        struct vec2 scale;
-    } touch_panel_calib;
-
-    // Screen data
-    struct {
-        struct sprite sprites[64];
-        uint32_t nsprites;
-    } screen;
-};
-struct appstate appstate;
-
 void app_init(void)
 {
+    return;
 }
 
 void app_loop(void)
 {
+    struct vec2 touch_point;
+    if (hal_get_touch_point(&touch_point)) {
+        hal_draw_rect(COLOR_WHITE, fixed16_int(touch_point.x), fixed16_int(touch_point.y), 1, 1);
+    }
 }
 
 void app_deinit(void)
 {
+    return;
 }

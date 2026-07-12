@@ -7,6 +7,13 @@
 #include <stdint.h>
 
 //
+// HAL General Declarations
+//
+
+// How often `app_loop` is called per second
+#define HAL_HZ 30
+
+//
 // HAL MATH
 //
 
@@ -14,32 +21,44 @@
 typedef int16_t fixed16_t;
 
 // Creates a fixed 8.8 integer from both the integral and fractional parts
-inline fixed16_t fixed16_init(int8_t int_part, uint8_t frac_part)
+static inline fixed16_t fixed16_init(int8_t int_part, uint8_t frac_part)
 {
     return int_part << 8 | frac_part;
 }
 
+// Gets the integer part of the fixed point integer
+static inline int8_t fixed16_int(fixed16_t this)
+{
+    return this >> 8;
+}
+
+// Gets the fractional part of the fixed point integer
+static inline uint8_t fixed16_frac(fixed16_t this)
+{
+    return this & 0xff;
+}
+
 // Adds both fixed point numbers together
-inline fixed16_t fixed16_add(fixed16_t lhs, fixed16_t rhs)
+static inline fixed16_t fixed16_add(fixed16_t lhs, fixed16_t rhs)
 {
     return lhs + rhs;
 }
 
 // Subtract rhs from lhs
-inline fixed16_t fixed16_sub(fixed16_t lhs, fixed16_t rhs)
+static inline fixed16_t fixed16_sub(fixed16_t lhs, fixed16_t rhs)
 {
     return lhs - rhs;
 }
 
-// Multiply lhs by rhs
-inline fixed16_t fixed16_mul(fixed16_t lhs, fixed16_t rhs)
+// Multiply lhs by static rhs
+static inline fixed16_t fixed16_mul(fixed16_t lhs, fixed16_t rhs)
 {
     return lhs * rhs >> 8;
 }
 
 // Returns the square root of the fixed point number.
 // If `this` is less than 0, it returns 0 (instead of showing an error).
-inline fixed16_t fixed16_sqrt(fixed16_t this)
+static inline fixed16_t fixed16_sqrt(fixed16_t this)
 {
     // Digit by digit algorithm
     if (this <= 0)
@@ -72,31 +91,31 @@ struct vec2 {
 };
 
 // Add both vectors element-wise
-inline struct vec2 vec2_add(struct vec2 lhs, struct vec2 rhs)
+static inline struct vec2 vec2_add(struct vec2 lhs, struct vec2 rhs)
 {
     return (struct vec2) { .x = lhs.x + rhs.x, .y = lhs.x + rhs.y };
 }
 
 // Subtract rhs from lhs element-wise
-inline struct vec2 vec2_sub(struct vec2 lhs, struct vec2 rhs)
+static inline struct vec2 vec2_sub(struct vec2 lhs, struct vec2 rhs)
 {
     return (struct vec2) { .x = lhs.x - rhs.x, .y = lhs.x - rhs.y };
 }
 
 // Multiply lhs by rhs element-wise
-inline struct vec2 vec2_mul(struct vec2 lhs, struct vec2 rhs)
+static inline struct vec2 vec2_mul(struct vec2 lhs, struct vec2 rhs)
 {
     return (struct vec2) { .x = lhs.x * rhs.x, .y = lhs.x * rhs.y };
 }
 
 // Computes the dot product of lhs and rhs
-inline fixed16_t vec2_dot(struct vec2 lhs, struct vec2 rhs)
+static inline fixed16_t vec2_dot(struct vec2 lhs, struct vec2 rhs)
 {
     return lhs.x * rhs.x + lhs.y * rhs.y;
 }
 
 // Returns the magnitude of the vector
-inline fixed16_t vec2_mag(struct vec2 this)
+static inline fixed16_t vec2_mag(struct vec2 this)
 {
     return fixed16_sqrt(this.x * this.x + this.y * this.y);
 }
@@ -138,7 +157,7 @@ enum color : bool {
 };
 
 // Writes all '0's or '1's to the area in the rectangle
-void rect_draw(enum color color, int8_t x, int8_t y, uint8_t w, uint8_t h);
+void hal_draw_rect(enum color color, int8_t x, int8_t y, uint8_t w, uint8_t h);
 
 // Represents a sprite that will be shown to the screen.
 // `bitmap` points to a row major monochrome bitmap of width `w` and height `h`.
@@ -153,7 +172,7 @@ struct sprite {
 };
 
 // Draws the sprite to the screen
-void sprite_draw(const struct sprite *this);
+void hal_draw_sprite(const struct sprite *this);
 
 //
 // HAL Power Diagnostics
